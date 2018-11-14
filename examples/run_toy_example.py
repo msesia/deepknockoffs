@@ -87,7 +87,7 @@ pars['batch_size'] = int(50*p)
 # Size of test set
 pars['test_size']  = int(10*p)
 # Learning rate for main training loop
-pars['lr'] = 0.01
+pars['lr'] = 0.001
 # When to decrease learning rate, unused when equals to pars['epochs']
 pars['lr_milestones'] = [pars['epochs']]
 # Width of the network (~6 layers are fixed)
