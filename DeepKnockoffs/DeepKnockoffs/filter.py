@@ -1,10 +1,11 @@
 import numpy as np
-import cvxpy as cvx
-from scipy import linalg
-import warnings
-from glmnet import ElasticNet
 
 def kfilter(W,q=0.1):
+    """ Apply the knockoff filter step
+    :param W: knockoff statistics
+    :param q: target false discovery rate
+    :return thresh: threshold value
+    """
     t = np.insert(np.abs(W[W!=0]),0,0)
     t = np.sort(t)
     ratio = np.zeros(len(t));
@@ -19,44 +20,3 @@ def kfilter(W,q=0.1):
        
     return thresh
 
-def RidgeCoefDiff(y, X, Xk, q, n_splits = 3):
-    
-    p = X.shape[1]
-    
-    X_input = np.concatenate((X,Xk),1)
-        
-    m = ElasticNet(alpha=0,n_splits=n_splits)        
-    m = m.fit(X_input, y)
-        
-    W = np.abs(m.coef_[0:p]) - np.abs(m.coef_[p:2*p])
-    thresh = knockFilter(W,q=q)
-    S = np.argwhere(W>=thresh)
-    
-    return S
-
-def LassoCoefDiff(y, X, Xk, q, n_splits = 3):
-    
-    p = X.shape[1]
-    
-    X_input = np.concatenate((X,Xk),1)
-        
-    m = ElasticNet(alpha=1,n_splits=n_splits)        
-    m = m.fit(X_input, y)
-        
-    W = np.abs(m.coef_[0:p]) - np.abs(m.coef_[p:2*p])
-    thresh = knockFilter(W,q=q)
-    S = np.argwhere(W>=thresh)
-    
-    return S
-
-def OLSCoefDiff(y, X, Xk, q):
-    
-    p = X.shape[1]
-    
-    X_input = np.concatenate((X,Xk),1)
-    coef = np.linalg.lstsq(X_input, y, rcond = None)[0]
-    W = np.abs(coef[0:p]) - np.abs(coef[p:2*p])
-    thresh = knockFilter(W,q=q)
-    S = np.argwhere(W>=thresh)
-    
-    return S

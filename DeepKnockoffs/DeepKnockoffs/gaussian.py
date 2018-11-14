@@ -2,7 +2,6 @@ import numpy as np
 import cvxpy as cvx
 from scipy import linalg
 import warnings
-import pdb
 
 def cov2cor(Sigma):
     """
@@ -41,25 +40,6 @@ def solve_sdp(Sigma, tol=1e-3):
 
     s = np.clip(np.asarray(s.value).flatten(), 0, 1)
 	
-    # # Compensate for numerical errors in CVX
-    # s_eps = 1e-8
-    # while True:
-    #     # Compute knockoff conditional covariance matrix
-    #     diag_s = np.diag(s*(1.0-s_eps))
-    #     #SigmaInv_s = np.linalg.solve(corrMatrix,diag_s)
-    #     SigmaInv_s = np.linalg.lstsq(corrMatrix,diag_s)[0]
-    #     Sigma_k = 2.0*diag_s - np.dot(diag_s,SigmaInv_s)
-        
-    #     if(np.min(np.linalg.eigvals(Sigma_k)) >= 0):
-    #         break
-
-    #     s_eps = s_eps*10        
-    #     if s_eps > 1:
-    #         s_eps = 1
-    #         break
-
-    # s = np.clip(s*(1-s_eps), 0, 1)
-
     # Scale back the results for a covariance matrix
     return np.multiply(s, np.diag(Sigma))
     
@@ -107,7 +87,7 @@ class GaussianKnockoffs:
     def generate(self, X):
         """
         Generate knockoffs for the multivariate Gaussian model
-        :param X      : A matrix of observations (n x p)
+        :param X: A matrix of observations (n x p)
         :return: A matrix of knockoff variables (n x p)
         """
         n, p = X.shape
