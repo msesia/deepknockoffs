@@ -4,7 +4,7 @@ def kfilter(W,q=0.1):
     """ Apply the knockoff filter step
     :param W: knockoff statistics
     :param q: target false discovery rate
-    :return thresh: threshold value
+    :return a threshold value for which the estimated FDP is less or equal q
     """
     t = np.insert(np.abs(W[W!=0]),0,0)
     t = np.sort(t)

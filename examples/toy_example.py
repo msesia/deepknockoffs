@@ -3,10 +3,7 @@ import sys
 
 
 # Data distribution:
-# "gaussian": AR(1) model, defined by a correlation coeffecient parameter
-# "gmm"     : mixture of 3 AR(1) models with different correlation coefficients
-# "sparse"  : heavy tailed and weakly correlated distribusion
-# "mstudent": heavy tailed correlated multivariate-t distribution
+# AR(1) model, defined by a correlation coeffecient parameter
 model = "gaussian"
 
 # set to 'True' to load a pretrained machine
@@ -72,8 +69,8 @@ training_params = parameters.GetTrainingHyperParams(model)
 # Set the parameters for training deep knockoffs
 pars = dict()
 
-# Data type, either "continous" or "binary"
-pars['family'] = "continous"
+# Data type, either "continuous" or "binary"
+pars['family'] = "continuous"
 # Dimensions of data
 pars['p'] = p                            
 # How many times running over all training observations
@@ -87,7 +84,7 @@ pars['batch_size'] = int(50*p)
 # Size of test set
 pars['test_size']  = int(10*p)
 # Learning rate for main training loop
-pars['lr'] = 0.001
+pars['lr'] = 0.01
 # When to decrease learning rate, unused when equals to pars['epochs']
 pars['lr_milestones'] = [pars['epochs']]
 # Width of the network (~6 layers are fixed)

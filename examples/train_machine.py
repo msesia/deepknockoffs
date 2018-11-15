@@ -8,7 +8,7 @@ import sys
 # "gmm"     : mixture of 3 AR(1) models with different correlation coefficients
 # "sparse"  : heavy tailed and weakly correlated distribusion
 # "mstudent": heavy tailed correlated multivariate-t distribution
-model = "gaussian"
+model = "mstudent"
 
 # set to 'True' to load a pretrained machine
 load_machine = False
@@ -101,8 +101,8 @@ training_params = parameters.GetTrainingHyperParams(model)
 # Set the parameters for training deep knockoffs
 pars = dict()
 
-# Data type, either "continous" or "binary
-pars['family'] = "continous"
+# Data type, either "continuous" or "binary
+pars['family'] = "continuous"
 # Dimensions of data
 pars['p'] = p                            
 # How many times running over all training observations

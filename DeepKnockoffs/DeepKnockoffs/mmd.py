@@ -1,81 +1,12 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+# code downloaded from https://github.com/OctoberChang/MMD-GAN/blob/master/mmd.py
 
 import torch
 import torch.nn.functional as F
 
-
-def pdist(sample_1, sample_2, norm=2, eps=1e-5):
-    """Compute the matrix of all squared pairwise distances.
-    Arguments
-    ---------
-    sample_1 : torch.Tensor or Variable
-        The first sample, should be of shape ``(n_1, d)``.
-    sample_2 : torch.Tensor or Variable
-        The second sample, should be of shape ``(n_2, d)``.
-    norm : float
-        The l_p norm to be used.
-    Returns
-    -------
-    torch.Tensor or Variable
-        Matrix of shape (n_1, n_2). The [i, j]-th entry is equal to
-        ``|| sample_1[i, :] - sample_2[j, :] ||_p``."""
-    n_1, n_2 = sample_1.size(0), sample_2.size(0)
-    norm = float(norm)
-    if norm == 2.:
-        norms_1 = torch.sum(sample_1**2, dim=1, keepdim=True)
-        norms_2 = torch.sum(sample_2**2, dim=1, keepdim=True)
-        norms = (norms_1.expand(n_1, n_2) +
-                 norms_2.transpose(0, 1).expand(n_1, n_2))
-        distances_squared = norms - 2 * sample_1.mm(sample_2.t())
-        return distances_squared
-        #return torch.sqrt(eps + torch.abs(distances_squared))
-    else:
-        dim = sample_1.size(1)
-        expanded_1 = sample_1.unsqueeze(1).expand(n_1, n_2, dim)
-        expanded_2 = sample_2.unsqueeze(0).expand(n_1, n_2, dim)
-        differences = torch.abs(expanded_1 - expanded_2) ** norm
-        inner = torch.sum(differences, dim=2, keepdim=False)
-    return (eps + inner) ** (1. / norm)
-
-
-def pairwise_dist(x, y):
-    xx, yy, zz = torch.mm(x,x.t()), torch.mm(y,y.t()), torch.mm(x, y.t())
-    
-    rx = (xx.diag().unsqueeze(0).expand_as(xx))
-    ry = (yy.diag().unsqueeze(0).expand_as(yy))
-    P = (rx.t() + ry - 2*zz)
-    return P
-
-
-# sigma_list is dummy
-def KL_loss(x, y, I):
-    #dist_xy = pdist(x, y, norm=2, eps=0)
-   
-    n_1, n_2 = x.size(0), y.size(0)
-    norms_1 = torch.sum(x**2, dim=1, keepdim=True)
-    norms_2 = torch.sum(y**2, dim=1, keepdim=True)
-    norms = (norms_1.expand(n_1, n_2) +
-             norms_2.transpose(0, 1).expand(n_1, n_2))
-    dist_xy = norms - 2 * x.mm(y.t())
-    
-    min_values_xy, inds = dist_xy.min(dim=1)
-
-    # compute the distance between x_i and x_j and ignore diagonal
-    #dist_xx = pdist(x, x, norm=2, eps=0)
-    norms = (norms_1.expand(n_1, n_1) +
-             norms_1.transpose(0, 1).expand(n_1, n_1))
-    dist_xx = norms - 2 * x.mm(x.t())
-    
-    dist_xx = dist_xx + 1e6*I
-    min_values_xx, inds = dist_xx.min(dim=1)
-    
-    kl_est = torch.log((min_values_xy)/(min_values_xx)).mean() #*x.size(1)/x.size(0)
-    return kl_est
-
 min_var_est = 1e-8
-
 
 # Consider linear time MMD with a linear kernel:
 # K(f(x), f(y)) = f(x)^Tf(y)
@@ -131,16 +62,16 @@ def _mix_rbf_kernel(X, Y, sigma_list):
 def _mix_imq_kernel(X,
                Y,
                sigma_list):
-    
+
     assert(X.size(0) == Y.size(0))
     m = X.size(0)
     h_dim = X.size(1)
-    
+
     Z = torch.cat((X, Y), 0)
     ZZT = torch.mm(Z, Z.t())
     diag_ZZT = torch.diag(ZZT).unsqueeze(1)
-    Z_norm_sqr = diag_ZZT.expand_as(ZZT) 
-       
+    Z_norm_sqr = diag_ZZT.expand_as(ZZT)
+
     exponent = Z_norm_sqr - 2 * ZZT + Z_norm_sqr.t()
 
     K = 0.0
@@ -166,7 +97,7 @@ def mix_rbf_mmd2_loss(X, Y, sigma_list, biased=True):
     return torch.sqrt(F.relu(mmd_dist_ref))
 
 def mix_rbf_mmd2_unbiased_loss(X, Y, sigma_list):
-    
+
     K_XX, K_XY, K_YY, d = _mix_rbf_kernel(X, Y, sigma_list)
     mmd_dist_ref = _mmd2_ignore_diagonals(K_XX, K_XY, K_YY, const_diagonal=False, biased=False)
     return torch.sqrt(F.relu(torch.abs(mmd_dist_ref)))
@@ -197,7 +128,7 @@ def _mmd2_ignore_diagonals(K_XX, K_XY, K_YY, const_diagonal=False, biased=False)
         sum_diag_X = torch.sum(diag_X)
         sum_diag_Y = torch.sum(diag_Y)
         sum_diag_XY = torch.sum(diag_XY)
-        
+
 
     Kt_XX_sums = K_XX.sum(dim=1) - diag_X             # \tilde{K}_XX * e = K_XX * e - diag_X
     Kt_YY_sums = K_YY.sum(dim=1) - diag_Y             # \tilde{K}_YY * e = K_YY * e - diag_Y

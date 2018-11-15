@@ -21,7 +21,7 @@ def covariance_diff_biased(X, Xk, SigmaHat, Mask, scale=1.0):
     :param scale: scaling the loss function
     :return: second-order loss function
     """
-    
+
     # Center X,Xk
     mX  = X  - torch.mean(X,0,keepdim=True)
     mXk = Xk - torch.mean(Xk,0,keepdim=True)
@@ -36,10 +36,10 @@ def covariance_diff_biased(X, Xk, SigmaHat, Mask, scale=1.0):
 
 def create_checkpoint_name(pars):
     """ Defines the filename of the network
-    :param pars: training hyperparameters
-    :return: filename composed of the hyperparameters
+    :param pars: training hyper-parameters
+    :return: filename composed of the hyper-parameters
     """
-    
+
     checkpoint_name = 'net'
     for key, value in pars.items():
         checkpoint_name += '_' + key
@@ -51,12 +51,12 @@ def create_checkpoint_name(pars):
     return checkpoint_name
 
 def save_checkpoint(state, filename):
-    """ Saves the most updatated network to filename and store the previous 
+    """ Saves the most updatated network to filename and store the previous
     machine in filename + _prev.pth.tar' file
     :param state: training state of the machine
     :filename: filename to save the current machine
     """
-    
+
     # keep the previous model
     if os.path.isfile(filename):
         os.rename(filename, filename + '_prev.pth.tar')
@@ -79,17 +79,19 @@ def gen_batches(n_samples, batch_size, n_reps):
     return(batches)
 
 class Net(nn.Module):
-    """ Defines the deep knockoff network architecture 
-    :param p: dimensions of data  
-    :param dim_h: width of the network (~6 layers are fixed)
-    :param family: data type, either "continous" or "binary"
+    """ Deep knockoff network
     """
     def __init__(self, p, dim_h, family="continuous"):
+        """ Constructor
+        :param p: dimensions of data
+        :param dim_h: width of the network (~6 layers are fixed)
+        :param family: data type, either "continuous" or "binary"
+        """
         super(Net, self).__init__()
 
         self.p = p
         self.dim_h = dim_h
-        if (family=="continous"):
+        if (family=="continuous"):
             self.main = nn.Sequential(
                 nn.Linear(2*self.p, self.dim_h, bias=False),
                 nn.BatchNorm1d(self.dim_h),
@@ -139,6 +141,11 @@ class Net(nn.Module):
             sys.exit("Error: unknown family");
 
     def forward(self, x, noise):
+        """ Sample knockoff copies of the data
+        :param x: input data
+        :param noise: random noise seed
+        :returns the constructed knockoffs
+        """
         x_cat = torch.cat((x,noise),1)
         x_cat[:,0::2] = x
         x_cat[:,1::2] = noise
@@ -151,9 +158,12 @@ def norm(X, p=2):
         return(torch.norm(X,p))
 
 class KnockoffMachine:
-    """ Defines the deep knockoff network architecture 
-    :param pars: dictionary containing the following keys
-                'family': data type, either "continous" or "binary"
+    """ Deep Knockoff machine
+    """
+    def __init__(self, pars, checkpoint_name=None, logs_name=None):
+        """ Constructor
+        :param pars: dictionary containing the following keys
+                'family': data type, either "continuous" or "binary"
                 'p': dimensions of data
                 'epochs': how many times running over all training observations
                 'num_replications': period between printing learning status
@@ -165,14 +175,12 @@ class KnockoffMachine:
                 'dim_h': width of the network
                 'target_corr': target correlation between variables and knockoffs
                 'LAMBDA': penalty encouraging second-order knockoffs
-                'DELTA': decorrelation penalty hyperparameter
+                'DELTA': decorrelation penalty hyper-parameter
                 'GAMMA': penalty for MMD distance
                 'alphas': kernel widths for the MMD measure (uniform weights)
-    :param dim_h: width of the network (~6 layers are fixed)
-    :param family: data type, either "continous" or "binary"
-    """
-    def __init__(self, pars, checkpoint_name=None, logs_name=None):
-        
+        :param checkpoint_name: location to save the machine
+        :param logs_name: location to save the logfile
+        """
         # architecture parameters
         self.p = pars['p']
         self.dim_h = pars['dim_h']
@@ -193,11 +201,11 @@ class KnockoffMachine:
         self.DELTA = pars['DELTA']
         self.GAMMA = pars['GAMMA']
         self.LAMBDA = pars['LAMBDA']
-        
+
         # noise seed
         self.noise_std = 1.0
         self.dim_noise = self.p
-        
+
         # higher-order discrepency function
         self.matching_loss = mix_rbf_mmd2_loss
         self.matching_param = self.alphas
@@ -209,25 +217,25 @@ class KnockoffMachine:
         if checkpoint_name == None:
             self.checkpoint_name = None
             self.best_checkpoint_name = None
-        else:                
+        else:
             self.checkpoint_name = checkpoint_name + "_checkpoint.pth.tar"
             self.best_checkpoint_name = checkpoint_name + "_best.pth.tar"
-        
-        if logs_name == None:    
+
+        if logs_name == None:
             self.logs_name = None
         else:
             self.logs_name = logs_name
-            
+
         self.resume_epoch = 0
-        
+
         # init the network
         self.net = Net(self.p, self.dim_h, family=self.family)
 
     def estimate_entropy(self, X, noise):
         """ Estimates the conditional entropy of generated knockoffs
-        :param X: input data  
+        :param X: input data
         :param noise: allocated tensor that is used to sample the noise seed
-        :return: estimated entropy of the knockoffs copies of one particular data point 
+        :return: estimated entropy of the knockoffs copies of one particular data point
         """
         idx = np.random.choice(X.shape[0],1)
         X = X[idx].repeat(1,X.shape[0]).view(-1, X.shape[1])
@@ -240,20 +248,20 @@ class KnockoffMachine:
         return cent/X.shape[1]
 
     def compute_diagnostics(self, X, Xk, noise, test=False):
-        """ Evaluates the different components of the loss funciton
-        :param X: input data  
+        """ Evaluates the different components of the loss function
+        :param X: input data
         :param Xk: knockoffs of X
         :param noise: allocated tensor that is used to sample the noise seed
         :param test: compute the components of the loss on train (False) or test (True)
-        :return diagnostics: a dictionay containing the following keys:
+        :return diagnostics: a dictionary containing the following keys:
                  'Mean' : distance between the means of X and Xk
                  'Corr-Diag': correlation between X and Xk
                  'Corr-Full: ||Cov(X,X) - Cov(Xk,Xk)||_F^2 / ||Cov(X,X)||_F^2
                  'Corr-Swap: ||M(Cov(X,X) - Cov(Xk,Xk))||_F^2 / ||Cov(X,X)||_F^2
-                             where M is a mask that excludes the diagnonal
+                             where M is a mask that excludes the diagonal
                  'Loss': the value of the loss function
-                 'MMD-Full': discrepency between (X',Xk') and (Xk'',X'')
-                 'MMD-Swap': discrepency between (X',Xk') and (X'',Xk'')_swap(s)
+                 'MMD-Full': discrepancy between (X',Xk') and (Xk'',X'')
+                 'MMD-Swap': discrepancy between (X',Xk') and (X'',Xk'')_swap(s)
                  'Entropy' : estimated conditional entropy of the generated knockoff samples
         """
         # Initialize dictionary of diagnostics
@@ -266,7 +274,7 @@ class KnockoffMachine:
         ##############################
         # Second-order moments
         ##############################
-        
+
         # Difference in means
         D_mean = X.mean(0) - Xk.mean(0)
         D_mean = (D_mean*D_mean).mean()
@@ -277,7 +285,7 @@ class KnockoffMachine:
         mXk = Xk - torch.mean(Xk,0,keepdim=True)
         scaleX  = (mX*mX).mean(0,keepdim=True)
         scaleXk = (mXk*mXk).mean(0,keepdim=True)
-        
+
         # Correlation between X and Xk
         scaleX[scaleX==0] = 1.0   # Prevent division by 0
         scaleXk[scaleXk==0] = 1.0 # Prevent division by 0
@@ -286,13 +294,13 @@ class KnockoffMachine:
         corr = (mXs*mXks).mean()
         diagnostics["Corr-Diag"] = corr.data.cpu().item()
 
-        # Corr(Xk,Xk)
+        # Cov(Xk,Xk)
         Sigma = torch.mm(torch.t(mXs),mXs)/mXs.shape[0]
         Sigma_ko = torch.mm(torch.t(mXks),mXks)/mXk.shape[0]
         DK_2 = norm(Sigma_ko-Sigma) / norm(Sigma)
         diagnostics["Corr-Full"] = DK_2.data.cpu().item()
 
-        # Corr(Xk,X) excluding the diagonal elements
+        # Cov(Xk,X) excluding the diagonal elements
         SigIntra_est = torch.mm(torch.t(mXks),mXs)/mXk.shape[0]
         DS_2 = norm(self.Mask*(SigIntra_est-Sigma)) / norm(Sigma)
         diagnostics["Corr-Swap"] = DS_2.data.cpu().item()
@@ -315,21 +323,21 @@ class KnockoffMachine:
         return diagnostics
 
     def loss(self, X, Xk, test=False):
-        """ Evaluates the loss funciton
-        :param X: input data  
+        """ Evaluates the loss function
+        :param X: input data
         :param Xk: knockoffs of X
-        :param test: evaluate the MMD, regrdless the value of GAMMA 
-        :return loss: the value of the effective loss funciton
+        :param test: evaluate the MMD, regardless the value of GAMMA
+        :return loss: the value of the effective loss function
                 loss_display: a copy of the loss variable that will be used for display
-                mmd_full: discrepency between (X',Xk') and (Xk'',X'')
-                mmd_swap: discrepency between (X',Xk') and (X'',Xk'')_swap(s)
+                mmd_full: discrepancy between (X',Xk') and (Xk'',X'')
+                mmd_swap: discrepancy between (X',Xk') and (X'',Xk'')_swap(s)
         """
-        
-        # Divide the observations into two distjoint batches
+
+        # Divide the observations into two disjoint batches
         n = int(X.shape[0]/2)
         X1,Xk1 = X[:n], Xk[:n]
         X2,Xk2 = X[n:(2*n)], Xk[n:(2*n)]
-        
+
         # Joint variables
         Z1 = torch.cat((X1,Xk1),1)
         Z2 = torch.cat((Xk2,X2),1)
@@ -338,9 +346,9 @@ class KnockoffMachine:
         Z3[:,swap_inds] = Xk2[:,swap_inds]
         Z3[:,swap_inds+self.p] = X2[:,swap_inds]
 
-        # Compute the discrepency between (X,Xk) and (Xk,X)
+        # Compute the discrepancy between (X,Xk) and (Xk,X)
         mmd_full = 0.0
-        # Compute the discrepency beteween (X,Xk) and (X,Xk)_s
+        # Compute the discrepancy between (X,Xk) and (X,Xk)_s
         mmd_swap = 0.0
         if(self.GAMMA>0 or test):
             # Evaluate the MMD by following section 4.3 in
@@ -384,9 +392,9 @@ class KnockoffMachine:
     def train(self, X_in, resume = False):
         """ Fit the machine to the training data
         :param X_in: input data
-        :param resume: proceed the training by loading the last checkpoint 
+        :param resume: proceed the training by loading the last checkpoint
         """
-        
+
         # Divide data into training/test set
         X = torch.from_numpy(X_in[self.test_size:]).float()
         if(self.test_size>0):
@@ -440,9 +448,9 @@ class KnockoffMachine:
         # main training loop
         for epoch in range(self.resume_epoch, self.epochs):
             # prepare for training phase
-            self.net.train() 
+            self.net.train()
             # update the learning rate scheduler
-            self.net_sched.step() 
+            self.net_sched.step()
             # divide the data into batches
             batches = gen_batches(X.size(0), self.batch_size, self.num_replications)
 
@@ -480,12 +488,12 @@ class KnockoffMachine:
             ##############################
             # Compute diagnostics
             ##############################
-            
+
             # Prepare for testing phase
-            self.net.eval() 
-            
+            self.net.eval()
+
             # Evaluate the diagnostics on the training data, the following
-            # funciton recomputes the loss on the training data
+            # function recomputes the loss on the training data
             diagnostics_train = self.compute_diagnostics(X, Xk, noise, test=False)
             diagnostics_train["Loss"]  = np.mean(losses)
             if(self.GAMMA>0 and self.GAMMA>0):
@@ -493,7 +501,7 @@ class KnockoffMachine:
                 diagnostics_train["MMD-Swap"] = np.mean(losses_dist_swap)
             diagnostics_train["Epoch"] = epoch
             diagnostics = diagnostics.append(diagnostics_train, ignore_index=True)
-            
+
             # Evaluate the diagnostics on the test data if available
             if(self.test_size>0):
                 Xk_test = self.net(X_test, self.noise_std*noise_test.normal_())
@@ -521,7 +529,7 @@ class KnockoffMachine:
             ##############################
             # Print progress
             ##############################
-            
+
             print("[%4d/%4d], Loss-Test: %.4f, Loss-Train: %.4f, Entropy: %.4f" %
                   (epoch + 1, self.epochs, diagnostics_test["Loss"], diagnostics_train["Loss"],
                    diagnostics_test["Entropy"]), end=", ")
@@ -584,7 +592,7 @@ class KnockoffMachine:
                 self.net.load_state_dict(checkpoint['state_dict'])
                 if torch.cuda.is_available():
                     self.net = self.net.cuda()
-                
+
                 self.net_optim = optim.SGD(self.net.parameters(), lr = self.lr, momentum=0.9)
                 self.net_optim.load_state_dict(checkpoint['optimizer'])
                 self.net_sched = optim.lr_scheduler.MultiStepLR(self.net_optim, gamma=0.1,
@@ -607,13 +615,13 @@ class KnockoffMachine:
         :param X_in: data samples
         :return Xk: knockoff copy per each sample in X
         """
-        
+
         X = torch.from_numpy(X_in).float()
         self.net = self.net.cpu()
         self.net.eval()
-        
+
         # Run the network in evaluation mode
         Xk = self.net(X, self.noise_std*torch.randn(X.size(0),self.dim_noise))
         Xk = Xk.data.cpu().numpy()
-        
+
         return Xk

@@ -8,7 +8,7 @@ import sys
 # "gmm"     : mixture of 3 AR(1) models with different correlation coefficients
 # "sparse"  : heavy tailed and weakly correlated distribusion
 # "mstudent": heavy tailed correlated multivariate-t distribution
-model = "gaussian"
+model = "mstudent"
 
 #######################################
 # Location of the trained machine     #
@@ -82,8 +82,8 @@ training_params = parameters.GetTrainingHyperParams(model)
 # Set the parameters for training deep knockoffs
 pars = dict()
 
-# Data type, either "continous" or "binary
-pars['family'] = "continous"
+# Data type, either "continuous" or "binary
+pars['family'] = "continuous"
 # Dimensions of data
 pars['p'] = p                            
 # How many times running over all training observations
@@ -133,8 +133,7 @@ signal_amplitude_vec = [2, 4, 6, 10, 15, 20, 25]
 n_experiments = 3 #1000
 # Target FDR level
 nominal_fdr = 0.1
-# Use the concervative knockoff filter
-knock_offset = 1.0
+
 
 test_params = parameters.GetFDRTestParams(model)
 
@@ -167,7 +166,7 @@ for amp_id in range(len(signal_amplitude_vec)):
         # Deep knockoffs
         Xk_m = machine.generate(X)
         W_m  = experiments.lasso_stats(X,Xk_m,y,alpha=test_params["elasticnet_alpha"],scale=False)
-        selected_m, FDP_m, POW_m = experiments.select(W_m, theta, nominal_fdr=nominal_fdr,offset=knock_offset)
+        selected_m, FDP_m, POW_m = experiments.select(W_m, theta, nominal_fdr=nominal_fdr)
         print("  Machine : power = %.3f, fdp = %.3f" %(POW_m, FDP_m))
         sys.stdout.flush()
         G_m = np.corrcoef(X,Xk_m,rowvar=False)
