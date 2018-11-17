@@ -8,14 +8,24 @@ import sys
 # "gmm"     : mixture of 3 AR(1) models with different correlation coefficients
 # "sparse"  : heavy tailed and weakly correlated distribusion
 # "mstudent": heavy tailed correlated multivariate-t distribution
+#model = "gaussian"
+#base_path = "/scratch/users/yromano/CJRepo_Remote/train_machine/0ed13f755e24f3692b8c90add3618acfb84369fd"
+
+#model = "gmm"
+#base_path = "/scratch/users/yromano/CJRepo_Remote/train_machine/2d7995d06617d5668174c4b1736f2354938a0f5a"
+#
+#model = "sparse"
+#base_path = "/scratch/users/yromano/CJRepo_Remote/train_machine/f2513e0586885f675fad6af849623623f7ff9a71"
+#
 model = "mstudent"
+base_path = "/scratch/users/yromano/CJRepo_Remote/train_machine/a25684feb1e47b94e91a9bce70421a1f8a1aaec9"
 
 #######################################
 # Location of the trained machine     #
 #######################################
 
 # Location to save the results 
-results_dir  = "./paper_results/" + model
+results_dir  = base_path + "/paper_results/" + model
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 
@@ -23,8 +33,7 @@ if not os.path.exists(results_dir):
 machine_dir  = results_dir + "/machines/"
 if not os.path.exists(machine_dir):
     os.makedirs(machine_dir)
-machine_file = machine_dir + "/network"
-machine_loadfile = machine_file + "_checkpoint.pth.tar"
+machine_loadfile = machine_dir + "/network_checkpoint.pth.tar"
 
 #######################################
 # Location to store the test results  #
@@ -39,7 +48,8 @@ out_plots = out_dir
 # Load all required python modules #
 ####################################
 
-print("Loading python modules... ", end=''); sys.stdout.flush()
+print("Loading python modules... "); sys.stdout.flush()
+
 import data
 import matplotlib
 import experiments
@@ -116,7 +126,7 @@ pars['GAMMA'] = training_params['GAMMA']
 pars['alphas'] = [1.,2.,4.,8.,16.,32.,64.,128.]
 
 # Load the machine
-machine = KnockoffMachine(pars, machine_file)
+machine = KnockoffMachine(pars, machine_dir)
 assert os.path.isfile(machine_loadfile), "File " + machine_loadfile + " does not exist!"
 machine.load(machine_loadfile)
 
@@ -128,9 +138,9 @@ machine.load(machine_loadfile)
 # Number of non-zero coefficients 
 signal_n = 30
 # Amplitude of the non-zero coefficients 
-signal_amplitude_vec = [2, 4, 6, 10, 15, 20, 25]
+signal_amplitude_vec = [2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 25]
 # Compute the FDR as the average FDP over n_experiments
-n_experiments = 3 #1000
+n_experiments = 1000
 # Target FDR level
 nominal_fdr = 0.1
 
@@ -181,7 +191,7 @@ for amp_id in range(len(signal_amplitude_vec)):
 
 
 # Plot results
-        
+
 # compute the average FDP and power per each signal amplitude
 avg_fdr_vec = np.zeros(len(signal_amplitude_vec))
 avg_power_vec = np.zeros(len(signal_amplitude_vec))
