@@ -1,4 +1,3 @@
-
 import os
 import sys
 import math
@@ -7,10 +6,8 @@ import numpy as np
 import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
-import scipy.stats as stats
 from DeepKnockoffs.mmd import mix_rbf_mmd2_loss
 np.warnings.filterwarnings('ignore')
-
 
 def covariance_diff_biased(X, Xk, SigmaHat, Mask, scale=1.0):
     """ Second-order loss function, as described in deep knockoffs manuscript
@@ -165,9 +162,8 @@ class KnockoffMachine:
         :param pars: dictionary containing the following keys
                 'family': data type, either "continuous" or "binary"
                 'p': dimensions of data
-                'epochs': how many times running over all training observations
-                'num_replications': period between printing learning status
-                'num_swaps': number of variables to swap at each iteration
+                'epochs': number of training epochs
+                'epoch_length': number of iterations over the full data per epoch
                 'batch_size': batch size
                 'test_size': size of test set
                 'lr': learning rate for main training loop
@@ -188,7 +184,7 @@ class KnockoffMachine:
 
         # optimization parameters
         self.epochs = pars['epochs']
-        self.num_replications = pars['num_replications']
+        self.epoch_length = pars['epoch_length']
         self.batch_size = pars['batch_size']
         self.test_size = pars['test_size']
         self.lr = pars['lr']
@@ -196,7 +192,6 @@ class KnockoffMachine:
 
         # loss function parameters
         self.alphas = pars['alphas']
-        self.num_swaps = pars['num_swaps']
         self.target_corr = torch.from_numpy(pars['target_corr']).float()
         self.DELTA = pars['DELTA']
         self.GAMMA = pars['GAMMA']
@@ -231,22 +226,6 @@ class KnockoffMachine:
         # init the network
         self.net = Net(self.p, self.dim_h, family=self.family)
 
-    def estimate_entropy(self, X, noise):
-        """ Estimates the conditional entropy of generated knockoffs
-        :param X: input data
-        :param noise: allocated tensor that is used to sample the noise seed
-        :return: estimated entropy of the knockoffs copies of one particular data point
-        """
-        idx = np.random.choice(X.shape[0],1)
-        X = X[idx].repeat(1,X.shape[0]).view(-1, X.shape[1])
-        Xk = self.net(X, self.noise_std*noise.normal_())
-        Xk = Xk.data.cpu().numpy()
-        cent = 0.0
-        for j in range(X.shape[1]):
-            histogram = np.histogram(Xk[:,j], bins=50, range=(-5,5), density=True)[0]
-            cent += stats.entropy(histogram, base=2)
-        return cent/X.shape[1]
-
     def compute_diagnostics(self, X, Xk, noise, test=False):
         """ Evaluates the different components of the loss function
         :param X: input data
@@ -262,7 +241,6 @@ class KnockoffMachine:
                  'Loss': the value of the loss function
                  'MMD-Full': discrepancy between (X',Xk') and (Xk'',X'')
                  'MMD-Swap': discrepancy between (X',Xk') and (X'',Xk'')_swap(s)
-                 'Entropy' : estimated conditional entropy of the generated knockoff samples
         """
         # Initialize dictionary of diagnostics
         diagnostics = dict()
@@ -312,12 +290,6 @@ class KnockoffMachine:
         diagnostics["Loss"]  = loss_display.data.cpu().item()
         diagnostics["MMD-Full"] = mmd_full.data.cpu().item()
         diagnostics["MMD-Swap"] = mmd_swap.data.cpu().item()
-
-        ##############################
-        # Conditional entropy
-        ##############################
-        cond_entropy = self.estimate_entropy(X[:noise.shape[0]], noise)
-        diagnostics["Entropy"] = cond_entropy
 
         # Return dictionary of diagnostics
         return diagnostics
@@ -452,7 +424,7 @@ class KnockoffMachine:
             # update the learning rate scheduler
             self.net_sched.step()
             # divide the data into batches
-            batches = gen_batches(X.size(0), self.batch_size, self.num_replications)
+            batches = gen_batches(X.size(0), self.batch_size, self.epoch_length)
 
             losses = []
             losses_dist_swap = []
@@ -495,7 +467,7 @@ class KnockoffMachine:
             # Evaluate the diagnostics on the training data, the following
             # function recomputes the loss on the training data
             diagnostics_train = self.compute_diagnostics(X, Xk, noise, test=False)
-            diagnostics_train["Loss"]  = np.mean(losses)
+            diagnostics_train["Loss"] = np.mean(losses)
             if(self.GAMMA>0 and self.GAMMA>0):
                 diagnostics_train["MMD-Full"] = np.mean(losses_dist_full)
                 diagnostics_train["MMD-Swap"] = np.mean(losses_dist_swap)
@@ -514,7 +486,8 @@ class KnockoffMachine:
             # If the test loss is at a minimum, save the machine to
             # the location pointed by best_checkpoint_name
             losses_test.append(diagnostics_test["Loss"])
-            if((self.test_size>0) and (diagnostics_test["Loss"] == np.min(losses_test)) and (self.best_checkpoint_name is not None)):
+            if((self.test_size>0) and (diagnostics_test["Loss"] == np.min(losses_test)) and \
+               (self.best_checkpoint_name is not None)):
                 best_machine = True
                 save_checkpoint({
                     'epochs': epoch+1,
@@ -529,17 +502,16 @@ class KnockoffMachine:
             ##############################
             # Print progress
             ##############################
-
-            print("[%4d/%4d], Loss-Test: %.4f, Loss-Train: %.4f, Entropy: %.4f" %
-                  (epoch + 1, self.epochs, diagnostics_test["Loss"], diagnostics_train["Loss"],
-                   diagnostics_test["Entropy"]), end=", ")
-            print("Corr: (%.3f,%.3f), Cov(Xk,Xk): (%.3f,%.3f), Cov(X,Xk): (%.3f,%.3f)" %
-                  (diagnostics_train["Corr-Diag"], diagnostics_test["Corr-Diag"],
-                   diagnostics_train["Corr-Full"], diagnostics_test["Corr-Full"],
-                   diagnostics_train["Corr-Swap"], diagnostics_test["Corr-Swap"]), end=", ")
-            print("MMD-Swap: (%.4f,%.4f), MMD-Full: (%.4f,%.4f)" %
-                  (diagnostics_train["MMD-Full"], diagnostics_test["MMD-Full"],
-                   diagnostics_train["MMD-Swap"], diagnostics_test["MMD-Swap"]), end="")
+            print("[%4d/%4d], Loss: (%.4f, %.4f)" %
+                  (epoch + 1, self.epochs, diagnostics_train["Loss"], diagnostics_test["Loss"]), end=", ")
+            print("MMD: (%.4f,%.4f)" %
+                  (diagnostics_train["MMD-Full"]+diagnostics_train["MMD-Swap"], 
+                   diagnostics_test["MMD-Full"]+diagnostics_test["MMD-Swap"]), end=", ")
+            print("Cov: (%.3f,%.3f)" %
+                  (diagnostics_train["Corr-Full"]+diagnostics_train["Corr-Swap"], 
+                   diagnostics_test["Corr-Full"]+diagnostics_test["Corr-Swap"]), end=", ")
+            print("Decorr: (%.3f,%.3f)" %
+                  (diagnostics_train["Corr-Diag"], diagnostics_test["Corr-Diag"]), end="")
             if best_machine:
                 print(" *", end="")
             print("")

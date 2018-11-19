@@ -1,4 +1,3 @@
-
 def GetDistributionParams(model,p):
     """
     Returns parameters for generating different data distributions
@@ -22,8 +21,8 @@ def GetDistributionParams(model,p):
         
 def GetTrainingHyperParams(model):
     """
-    Returns hyperparameters for training deep knockoffs as described in the 
-    published manuscript
+    Returns the default hyperparameters for training deep knockoffs
+    as described in the paper
     """
     params = dict()
     
@@ -43,21 +42,4 @@ def GetTrainingHyperParams(model):
     else:
         raise Exception('Unknown data distribution: ' + model)
         
-    return params
-
-def GetFDRTestParams(model):
-    
-    params = dict()
-
-    # Test parameters for each model
-    if model in ["gaussian", "gmm"]:
-        params["n"] = 150
-        params["elasticnet_alpha"] = 0.1
-    elif model in ["mstudent"]:
-        params["n"] = 200
-        params["elasticnet_alpha"] = 0.0
-    elif model in ["sparse"]:
-        params["n"] = 200
-        params["elasticnet_alpha"] = 0.0
-    
     return params

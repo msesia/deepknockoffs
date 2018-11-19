@@ -1,11 +1,8 @@
 import numpy as np
-import pandas as pd
 import scipy.special as sp
 from operator import mul
 from functools import reduce
-from sklearn.preprocessing import StandardScaler
 
-    
 def covariance_AR1(p, rho):
     """
     Construct the covariance matrix of a Gaussian AR(1) process
@@ -91,7 +88,7 @@ class GaussianMixtureAR1:
             self.normals.append(GaussianAR1(self.p, rho))
             self.Sigma += self.normals[k].Sigma / self.K
 
-    def sample(self, n=1, return_Z=False, **args):
+    def sample(self, n=1, **args):
         """
         Sample the observations from their marginal distribution
         :param n: The number of observations to be sampled (default 1)
@@ -105,11 +102,7 @@ class GaussianMixtureAR1:
             k_idx = np.where(Z==k)[0]
             n_idx = len(k_idx)
             X[k_idx,:] = self.normals[k].sample(n_idx)
-
-        if(return_Z==True):
-            return X,Z
-        else:
-            return X
+        return X
 
 class SparseGaussian:
     """
@@ -159,59 +152,11 @@ class MultivariateStudentT:
         G = np.tile(np.random.gamma(self.df/2.,2./self.df,n),(self.p,1)).T
         return Z/np.sqrt(G)
 
-class HMM:
-    """
-    Hidden Markov model for genotypes
-    """
-    def __init__(self, p):
-        """
-        Constructor
-        :param p      : Number of variables
-        :return:
-        """
-        # Load data from file
-        assert p<=100, "p cannot be greater than 100"
-        self.p = p
-        data_storage = "/scratch/groups/candes/deep_knockoffs/data_hmm/samples/"
-        data_file = data_storage + "/gen_chr1_p100.txt"
-        self.data = pd.read_csv(data_file, delimiter=" ", header=None, dtype=np.int32).values
-        self.data = self.data[:,0:self.p]
-        # Load exact knockoffs as well
-        data_k_file = data_storage + "/gen_chr1_p100_knockoffs.txt"
-        self.data_k = pd.read_csv(data_k_file, delimiter=" ", header=None, dtype=np.int32).values
-        self.data_k = self.data_k[:,0:self.p]
-
-        # Compute population mean and covariance matrix
-        self.Sigma = np.cov(self.data,rowvar=False)
-        self.mu = np.mean(self.data,0)
-        # Fit scaler
-        self.scaler = StandardScaler()
-        self.scaler.fit(self.data)
-
-    def sample(self, n=1, joint=False, test=False, **args):
-        """
-        Sample the observations from their marginal distribution
-        :param n: The number of observations to be sampled (default 1)
-        :return: numpy matrix (n x p)
-        """
-        # Keep only half of the observations
-        n_data = self.data.shape[0]
-        if(test):
-            observations = np.arange(int(n_data/2), n_data)
-        else:
-            observations = np.arange(0, int(n_data/2))
-        row_idx = np.random.choice(observations, n, replace=False)
-
-        if(joint):
-            return self.data[row_idx], self.data_k[row_idx]
-        else:
-            return self.data[row_idx]
-
 class DataSampler:
     """
     Model for the explanatory variables
     """
-    def __init__(self, params, standardize=False):
+    def __init__(self, params, standardize=True):
         self.p = params['p']
         self.standardize = standardize
 
@@ -228,13 +173,10 @@ class DataSampler:
         elif(self.model_name=="mstudent"):
             self.model = MultivariateStudentT(self.p, params["df"], params["rho"])
             self.name = "mstudent"
-        elif(self.model_name=="hmm"):
-            self.model = HMM(self.p)
-            self.name = "hmm"
         else:
             raise Exception('Unknown model: '+self.model_name)
 
-        # Standardize covariance matrix
+        # Center and scale distribution parameters
         if(self.standardize):
             self.Sigma = cov2cor(self.model.Sigma)
             self.mu = 0 * self.model.mu
@@ -243,25 +185,10 @@ class DataSampler:
             self.mu = self.model.mu
 
     def scaler(self, X):
-        if(self.model_name=="hmm"):
-            return self.model.scaler.transform(X)
-        else:        
-            return (X-self.model.mu) / np.sqrt(np.diag(self.model.Sigma))
+        return (X-self.model.mu) / np.sqrt(np.diag(self.model.Sigma))
 
-    def sample(self, n, joint=False, return_Z=False, **args):
-        if(joint):
-            X, Xk = self.model.sample(n, joint=joint, **args)
-            if(self.standardize):
-                X = self.scaler(X)
-                Xk = self.scaler(Xk)
-            return X, Xk
-        if(return_Z):
-            X, Z = self.model.sample(n, return_Z=return_Z, **args)
-            if(self.standardize):
-                X = self.scaler(X)
-            return X, Z
-        else:
-            X = self.model.sample(n, joint=joint, **args)
-            if(self.standardize):
-                X = self.scaler(X)
-            return X
+    def sample(self, n, **args):
+        X = self.model.sample(n, **args)
+        if(self.standardize):
+            X = self.scaler(X)
+        return X

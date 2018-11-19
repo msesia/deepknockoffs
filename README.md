@@ -1,52 +1,35 @@
-# DeepKnockoffs
+Deep Knockoffs
+==============
 
-#################################
-#################################
-#         Dependencies          #
-#################################
-#################################
+This repository provides a Python package for sampling approximate
+model-X knockoffs using deep generative models.
 
-numpy=1.14.2
-lapack
-scipy=1.1.0
-pytorch=0.4.1
-sklearn=0.19.1
-cvxpy=1.0.10
-cvxopt=1.2.0
-glmnet=0.2.0 (use glmnet_python package)
-pandas=0.23.4
+To learn more about the algorithm implemented in this package, visit  https://web.stanford.edu/group/candes/deep-knockoffs/ and read the accompanying paper.
 
-#################################
-#################################
-#      Installation Guide       #
-#################################
-#################################
+To learn more about the broader framework of knockoffs, visit https://web.stanford.edu/group/candes/knockoffs/.
 
-$ cd Local/Path/deepknockoffs/DeepKnockoffs
-$ python setup.py install --user
+## Software dependencies
 
-#################################
-#################################
-#           Examples            #
-#################################
-#################################
+- numpy=1.14.0
+- scipy=1.0.0
+- pytorch=0.4.1
+- cvxpy=1.0.10
+- cvxopt=1.2.0
+- pandas=0.23.4
 
-Basic experiment:
+## Installation guide
 
-Run a toy example on a small dataset and plot second-order diagnostics.
-The samples follow Gaussian AR(1) model.
+```bash
+cd DeepKnockoffs
+python setup.py install --user
+```
 
-$ cd Local/Path/deepknockoffs/examples
-$ python toy_example.py
+## Examples
+
+A usage example on a toy problem with multivariate Gaussian variables is available in the form of a 
+Jupyter Notebook.
 
 
-Advanced experiments:
+## License
 
-The script train_machine.py fits a machine to the distributions defined in
-Section 6 in the manuscript and save the result to a local directory.
-The distributions include: "Gaussian model", "Gaussian mixture model",
-"Multivariate Student’s t-distribution", and "Sparse Gaussian variables".
-
-The script test_machine.py loads a pre-trained machine and estimates the FDR and
-Power in a controlled synthetic setting, see Section 6 in the manuscript.
-Detailed results and plots are saved to a local directory.
+This software is distributed under the [GPLv3 license](https://www.gnu.org/licenses/gpl-3.0.en.html) and it comes with ABSOLUTELY NO WARRANT.Y
