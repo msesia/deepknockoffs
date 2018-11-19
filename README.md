@@ -10,6 +10,9 @@ To learn more about the broader framework of knockoffs, visit https://web.stanfo
 
 ## Software dependencies
 
+The code contained in this repository was tested on the following configuration of Python:
+
+- python=3.6.5
 - numpy=1.14.0
 - scipy=1.0.0
 - pytorch=0.4.1
@@ -34,4 +37,4 @@ python setup.py install --user
 
 ## License
 
-This software is distributed under the [GPLv3 license](https://www.gnu.org/licenses/gpl-3.0.en.html) and it comes with ABSOLUTELY NO WARRANT.Y
+This software is distributed under the [GPLv3 license](https://www.gnu.org/licenses/gpl-3.0.en.html) and it comes with ABSOLUTELY NO WARRANTY.
