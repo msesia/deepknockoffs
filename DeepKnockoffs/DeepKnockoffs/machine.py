@@ -502,18 +502,29 @@ class KnockoffMachine:
             ##############################
             # Print progress
             ##############################
-            print("[%4d/%4d], Loss: (%.4f, %.4f)" %
-                  (epoch + 1, self.epochs, diagnostics_train["Loss"], diagnostics_test["Loss"]), end=", ")
-            print("MMD: (%.4f,%.4f)" %
-                  (diagnostics_train["MMD-Full"]+diagnostics_train["MMD-Swap"], 
-                   diagnostics_test["MMD-Full"]+diagnostics_test["MMD-Swap"]), end=", ")
-            print("Cov: (%.3f,%.3f)" %
-                  (diagnostics_train["Corr-Full"]+diagnostics_train["Corr-Swap"], 
-                   diagnostics_test["Corr-Full"]+diagnostics_test["Corr-Swap"]), end=", ")
-            print("Decorr: (%.3f,%.3f)" %
-                  (diagnostics_train["Corr-Diag"], diagnostics_test["Corr-Diag"]), end="")
-            if best_machine:
-                print(" *", end="")
+            if(self.test_size>0):
+                print("[%4d/%4d], Loss: (%.4f, %.4f)" %
+                      (epoch + 1, self.epochs, diagnostics_train["Loss"], diagnostics_test["Loss"]), end=", ")
+                print("MMD: (%.4f,%.4f)" %
+                      (diagnostics_train["MMD-Full"]+diagnostics_train["MMD-Swap"], 
+                       diagnostics_test["MMD-Full"]+diagnostics_test["MMD-Swap"]), end=", ")
+                print("Cov: (%.3f,%.3f)" %
+                      (diagnostics_train["Corr-Full"]+diagnostics_train["Corr-Swap"], 
+                       diagnostics_test["Corr-Full"]+diagnostics_test["Corr-Swap"]), end=", ")
+                print("Decorr: (%.3f,%.3f)" %
+                      (diagnostics_train["Corr-Diag"], diagnostics_test["Corr-Diag"]), end="")
+                if best_machine:
+                    print(" *", end="")
+            else:
+                print("[%4d/%4d], Loss: %.4f" %
+                      (epoch + 1, self.epochs, diagnostics_train["Loss"]), end=", ")
+                print("MMD: %.4f" %
+                      (diagnostics_train["MMD-Full"] + diagnostics_train["MMD-Swap"]), end=", ")
+                print("Cov: %.3f" %
+                      (diagnostics_train["Corr-Full"] + diagnostics_train["Corr-Swap"]), end=", ")
+                print("Decorr: %.3f" %
+                      (diagnostics_train["Corr-Diag"]), end="")
+                
             print("")
             sys.stdout.flush()
 
@@ -531,10 +542,11 @@ class KnockoffMachine:
                     'scheduler' : self.net_sched.state_dict(),
                 }, self.checkpoint_name)
 
-    def load(self, filename):
-        """ Load a machine from filename
-        :param filename: location of a trained machine
+    def load(self, checkpoint_name):
+        """ Load a machine from a stored checkpoint
+        :param checkpoint_name: checkpoint name of a trained machine
         """
+        filename = checkpoint_name + "_checkpoint.pth.tar"
 
         flag = 1
         if os.path.isfile(filename):

@@ -34,7 +34,6 @@ def solve_sdp(Sigma, tol=1e-3):
     constraints = [ 2.0*corrMatrix >> cvx.diag(s) + cvx.diag([tol]*p), 0<=s, s<=1]
     prob = cvx.Problem(objective, constraints)
     prob.solve(solver='CVXOPT')
-    #prob.solve(solver='SCS')
     
     assert prob.status == cvx.OPTIMAL
 

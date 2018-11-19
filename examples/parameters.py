@@ -43,3 +43,22 @@ def GetTrainingHyperParams(model):
         raise Exception('Unknown data distribution: ' + model)
         
     return params
+
+def GetFDRTestParams(model):
+    """
+    Returns the default hyperparameters for performing controlled
+    variable selection experiments as described in the paper
+    """
+    params = dict()
+    # Test parameters for each model
+    if model in ["gaussian", "gmm"]:
+        params["n"] = 150
+        params["elasticnet_alpha"] = 0.1
+    elif model in ["mstudent"]:
+        params["n"] = 200
+        params["elasticnet_alpha"] = 0.0
+    elif model in ["sparse"]:
+        params["n"] = 200
+        params["elasticnet_alpha"] = 0.0
+    
+    return params

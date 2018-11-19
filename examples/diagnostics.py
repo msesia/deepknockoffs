@@ -207,7 +207,6 @@ class KnockoffExam:
         print("Computing knockoff diagnostics...")
         for exam in range(n_exams):
             sys.stdout.write('\r')
-            # the exact output you're looking for:
             sys.stdout.write("[%-25s] %d%%" % ('='*int((exam+1)/n_exams*25), ((exam+1)/n_exams)*100))
             sys.stdout.flush()
 
