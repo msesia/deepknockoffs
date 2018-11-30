@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import torch
 from torch.autograd import Function
-from DeepKnock.mmd import mix_rbf_mmd2
+from DeepKnockoffs.mmd import mix_rbf_mmd2
 import torch_two_sample.statistics_diff as diff_tests
 import torch_two_sample.statistics_nondiff as nondiff_tests
 import matplotlib.pyplot as plt
