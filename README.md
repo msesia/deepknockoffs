@@ -31,12 +31,11 @@ python setup.py install --user
 
 ## Examples
 
- - [examples/toy-example.ipynb](examples/toy-example.ipynb) A usage example on a toy problem with multivariate Gaussian variables is available in the form of a 
- Jupyter Notebook.
- - [examples/experiments-1.ipynb](`examples/experiments-1.ipynb`) Code to train the machine used in the paper.
- - [examples/experiments-2.ipynb](`examples/experiments-2.ipynb`) Code to compute the goodness-of-fit diagnostics for the machine used in the paper.
- - [examples/experiments-3.ipynb](`examples/experiments-3.ipynb`) Code to perform the controlled variable selection experiments in the paper.
- - [examples/data-preprocessing.ipynb](`examples/data-preprocessing.ipynb`) Example of how to pre-process data containing extremely correlated variables.
+ - [examples/toy-example.ipynb](examples/toy-example.ipynb) A usage example on a toy problem with multivariate Gaussian variables is available in the form of a Jupyter Notebook.
+ - [examples/experiments-1.ipynb](examples/experiments-1.ipynb) Code to train the machine used in the paper.
+ - [examples/experiments-2.ipynb](examples/experiments-2.ipynb) Code to compute the goodness-of-fit diagnostics for the machine used in the paper.
+ - [examples/experiments-3.ipynb](examples/experiments-3.ipynb) Code to perform the controlled variable selection experiments in the paper.
+ - [examples/data-preprocessing.ipynb](examples/data-preprocessing.ipynb) Example of how to pre-process data containing extremely correlated variables.
 
 ## License
 
