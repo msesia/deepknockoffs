@@ -27,7 +27,9 @@ def cov2cor(Sigma):
     """
     sqrtDiagSigma = np.sqrt(np.diag(Sigma))
     scalingFactors = np.outer(sqrtDiagSigma,sqrtDiagSigma)
-    return np.divide(Sigma, scalingFactors)
+    Sigma = np.divide(Sigma, scalingFactors)
+    Sigma[np.diag_indices(Sigma.shape[0])] = 1
+    return Sigma
 
 def scramble(a, axis=1):
     """

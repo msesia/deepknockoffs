@@ -36,6 +36,7 @@ python setup.py install --user
  - `examples/experiments-1.ipynb` Code to train the machine used in the paper.
  - `examples/experiments-2.ipynb` Code to compute the goodness-of-fit diagnostics for the machine used in the paper.
  - `examples/experiments-3.ipynb` Code to perform the controlled variable selection experiments in the paper.
+ - `examples/data-preprocessing.ipynb` Example of how to pre-process data containing extremely correlated variables.
 
 ## License
 
