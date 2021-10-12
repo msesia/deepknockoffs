@@ -4,7 +4,7 @@ Deep Knockoffs
 This repository provides a Python package for sampling approximate
 model-X knockoffs using deep generative models.
 
-Accompanying paper: https://arxiv.org/abs/1811.06687
+Accompanying paper: https://arxiv.org/abs/1811.06687.
 Published in the Journal of the American Statistical Association (https://doi.org/10.1080/01621459.2019.1660174)
 
 To learn more about the algorithm implemented in this package, visit  https://web.stanford.edu/group/candes/deep-knockoffs/ and read the accompanying paper.
